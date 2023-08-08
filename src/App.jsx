@@ -4,6 +4,7 @@ import TodoComputed from "./components/TodoComputed";
 import TodoCreate from "./components/TodoCreate";
 import TodoFilter from "./components/TodoFilter";
 import TodoList from "./components/TodoList";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 /* const initialStateTodos = [
     {
@@ -19,6 +20,13 @@ import TodoList from "./components/TodoList";
 ]; */
 
 const initialStateTodos = JSON.parse(localStorage.getItem("todos")) || [];
+
+const reorder = (list, startIndex, endIndex) => {
+    const result = [...list];
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    return result;
+};
 
 const App = () => {
     const [todos, setTodos] = useState(initialStateTodos);
@@ -71,19 +79,35 @@ const App = () => {
         setFilter(filter);
     };
 
+    const handleDragEnd = (result) => {
+        const { destination, source } = result;
+        if (!destination) return;
+        if (
+            source.index === destination.index &&
+            source.droppableId === destination.droppableId
+        )
+            return;
+
+        setTodos((prevtask) =>
+            reorder(prevtask, source.index, destination.index)
+        );
+    };
+
     return (
         <div className="mx-auto min-h-screen bg-gray-100 bg-[url(./assets/images/bg-mobile-light.jpg)] bg-contain bg-no-repeat transition-all duration-1000 dark:bg-gray-900 dark:bg-[url(./assets/images/bg-mobile-dark.jpg)] md:max-w-xl md:bg-[url(./assets/images/bg-desktop-light.jpg)] md:dark:bg-[url(./assets/images/bg-desktop-dark.jpg)]">
             <Header />
 
             <main className="container m-5 mx-auto px-6">
-                <TodoCreate createTodo={createTodo} />
-                <TodoList
-                    todos={filteredTodos()}
-                    removeTodo={removeTodo}
-                    updateTodo={updateTodo}
-                />
-                <TodoComputed todos={todos} clearComplete={clearComplete} />
-                <TodoFilter changeFilter={changeFilter} filter={filter} />
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <TodoCreate createTodo={createTodo} />
+                    <TodoList
+                        todos={filteredTodos()}
+                        removeTodo={removeTodo}
+                        updateTodo={updateTodo}
+                    />
+                    <TodoComputed todos={todos} clearComplete={clearComplete} />
+                    <TodoFilter changeFilter={changeFilter} filter={filter} />
+                </DragDropContext>
             </main>
 
             <footer className="container mx-auto mt-8 px-6 text-center text-sm text-gray-600">
